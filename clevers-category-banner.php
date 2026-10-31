@@ -2,13 +2,15 @@
 /**
  * Plugin Name: Clevers Category Banner
  * Description: Banner full-width exclusivo por categoría de WooCommerce sobre el listado de productos. Optimizado en rendimiento, seguridad y responsivo.
- * Version: 1.2.0
+ * Version: 1.3.0
  * Author: Clevers
+ * Text Domain: clevers-category-banner
+ * License: GPLv2 or later
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-define( 'CLEVERS_CATBAN_VERSION', '1.2.0' );
+define( 'CLEVERS_CATBAN_VERSION', '1.3.0' );
 define( 'CLEVERS_CATBAN_PATH', plugin_dir_path( __FILE__ ) );
 define( 'CLEVERS_CATBAN_URL', plugin_dir_url( __FILE__ ) );
 define( 'CLEVERS_CATBAN_META', '_clevers_category_banner' );
@@ -23,13 +25,13 @@ function clevers_catban_add_field() {
     wp_nonce_field( CLEVERS_CATBAN_NONCE, 'clevers_catban_nonce' );
     ?>
     <div class="form-field">
-        <label><?php esc_html_e( 'Banner de categoría', 'clevers' ); ?></label>
+        <label><?php esc_html_e( 'Banner de categoría', 'clevers-category-banner' ); ?></label>
         <div class="clevers-catban-preview" style="margin-bottom:10px;"></div>
         <input type="hidden" name="clevers_category_banner" class="clevers-catban-input" value="" />
         <input type="hidden" name="clevers_catban_stay" value="1" />
-        <button type="button" class="button clevers-catban-upload"><?php esc_html_e( 'Subir / Elegir imagen', 'clevers' ); ?></button>
-        <button type="button" class="button clevers-catban-remove" style="display:none;"><?php esc_html_e( 'Quitar', 'clevers' ); ?></button>
-        <p class="description"><?php esc_html_e( 'Imagen exclusiva para el banner superior del archivo de categoría. Se recomienda 1200×400 px o superior.', 'clevers' ); ?></p>
+        <button type="button" class="button clevers-catban-upload"><?php esc_html_e( 'Subir / Elegir imagen', 'clevers-category-banner' ); ?></button>
+        <button type="button" class="button clevers-catban-remove" style="display:none;"><?php esc_html_e( 'Quitar', 'clevers-category-banner' ); ?></button>
+        <p class="description"><?php esc_html_e( 'Imagen exclusiva para el banner superior del archivo de categoría. Se recomienda 1200×400 px o superior.', 'clevers-category-banner' ); ?></p>
     </div>
     <?php
 }
@@ -41,16 +43,16 @@ function clevers_catban_edit_field( $term ) {
     wp_nonce_field( CLEVERS_CATBAN_NONCE, 'clevers_catban_nonce' );
     ?>
     <tr class="form-field">
-        <th scope="row" valign="top"><label><?php esc_html_e( 'Banner de categoría', 'clevers' ); ?></label></th>
+        <th scope="row" valign="top"><label><?php esc_html_e( 'Banner de categoría', 'clevers-category-banner' ); ?></label></th>
         <td>
             <div class="clevers-catban-preview" style="margin-bottom:10px;">
                 <?php if ( $img ) echo '<img src="' . esc_url( $img ) . '" alt="" style="max-width:300px;height:auto;" />'; ?>
             </div>
             <input type="hidden" name="clevers_category_banner" class="clevers-catban-input" value="<?php echo esc_attr( $banner_id ); ?>" />
             <input type="hidden" name="clevers_catban_stay" value="1" />
-            <button type="button" class="button clevers-catban-upload"><?php esc_html_e( 'Subir / Elegir imagen', 'clevers' ); ?></button>
-            <button type="button" class="button clevers-catban-remove" style="<?php echo $img ? '' : 'display:none;'; ?>"><?php esc_html_e( 'Quitar', 'clevers' ); ?></button>
-            <p class="description"><?php esc_html_e( 'Imagen exclusiva para el banner superior del archivo de categoría. Se recomienda 1200×400 px o superior.', 'clevers' ); ?></p>
+            <button type="button" class="button clevers-catban-upload"><?php esc_html_e( 'Subir / Elegir imagen', 'clevers-category-banner' ); ?></button>
+            <button type="button" class="button clevers-catban-remove" style="<?php echo $img ? '' : 'display:none;'; ?>"><?php esc_html_e( 'Quitar', 'clevers-category-banner' ); ?></button>
+            <p class="description"><?php esc_html_e( 'Imagen exclusiva para el banner superior del archivo de categoría. Se recomienda 1200×400 px o superior.', 'clevers-category-banner' ); ?></p>
         </td>
     </tr>
     <?php
@@ -75,7 +77,7 @@ function clevers_catban_save( $term_id ) {
         $action = 'removed';
     }
     // Invalidar caché de render
-    delete_transient( 'clevers_catban_html_' . $term_id );
+    clevers_catban_flush_term_cache( $term_id );
 
     // Marcar notice en próxima carga
     set_transient( 'clevers_catban_notice_' . $term_id, $action, 60 );
@@ -95,8 +97,8 @@ function clevers_catban_admin_notice() {
     if ( ! $action ) return;
     delete_transient( 'clevers_catban_notice_' . $tid );
     $msg = $action === 'updated'
-        ? __( 'Banner de categoría actualizado.', 'clevers' )
-        : ( $action === 'removed' ? __( 'Banner de categoría eliminado.', 'clevers' ) : '' );
+        ? __( 'Banner de categoría actualizado.', 'clevers-category-banner' )
+        : ( $action === 'removed' ? __( 'Banner de categoría eliminado.', 'clevers-category-banner' ) : '' );
     if ( $msg ) {
         echo '<div class="notice notice-success is-dismissible"><p>' . esc_html( $msg ) . '</p></div>';
     }
@@ -141,19 +143,45 @@ function clevers_catban_assets() {
     $banner_id = absint( get_term_meta( $term->term_id, CLEVERS_CATBAN_META, true ) );
     if ( ! $banner_id ) return;
 
-    wp_enqueue_style(
-        'clevers-catban',
-        CLEVERS_CATBAN_URL . 'assets/banner.css',
-        array(),
-        CLEVERS_CATBAN_VERSION
-    );
+    clevers_catban_enqueue_styles();
+}
+
+function clevers_catban_enqueue_styles() {
+    if ( ! wp_style_is( 'clevers-catban', 'enqueued' ) ) {
+        wp_enqueue_style(
+            'clevers-catban',
+            CLEVERS_CATBAN_URL . 'assets/banner.css',
+            array(),
+            CLEVERS_CATBAN_VERSION
+        );
+    }
 }
 
 /* ============================================================
- * Front: render (caché transient)
+ * Front: registro automático de hooks (Astra o universal WC)
  * ============================================================ */
 
-add_action( 'astra_content_before', 'clevers_catban_render', 1 );
+add_action( 'wp', 'clevers_catban_register_render_hook' );
+function clevers_catban_register_render_hook() {
+    if ( is_admin() ) return;
+
+    // Detectar Astra para 100% retrocompatibilidad
+    $is_astra = defined( 'ASTRA_THEME_VERSION' ) || function_exists( 'astra_content_before' ) || get_template() === 'astra';
+    $default_hook = $is_astra ? 'astra_content_before' : 'woocommerce_before_main_content';
+    $default_prio = $is_astra ? 1 : 15;
+
+    $hook     = apply_filters( 'clevers_catban_render_hook', $default_hook );
+    $priority = (int) apply_filters( 'clevers_catban_render_priority', $default_prio );
+
+    if ( ! empty( $hook ) && is_string( $hook ) ) {
+        add_action( $hook, 'clevers_catban_render', $priority );
+    }
+}
+
+/* ============================================================
+ * Front: render automático
+ * ============================================================ */
+
 function clevers_catban_render() {
     if ( ! is_product_category() ) return;
     $term = get_queried_object();
@@ -161,22 +189,46 @@ function clevers_catban_render() {
     $banner_id = absint( get_term_meta( $term->term_id, CLEVERS_CATBAN_META, true ) );
     if ( ! $banner_id ) return;
 
-    $cache_key = 'clevers_catban_html_' . $term->term_id;
-    $html      = get_transient( $cache_key );
+    echo clevers_catban_get_html( $term, $banner_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+}
+
+/**
+ * Obtiene el HTML del banner (con caché transient).
+ */
+function clevers_catban_get_html( $term, $banner_id, $args = array() ) {
+    $defaults = array(
+        'show_title' => 'yes',
+        'show_desc'  => 'yes',
+        'full_width' => 'yes',
+    );
+    $args = wp_parse_args( $args, $defaults );
+
+    $is_default_view = ( 'yes' === $args['show_title'] && 'yes' === $args['show_desc'] && 'yes' === $args['full_width'] );
+    $cache_key       = $is_default_view 
+        ? 'clevers_catban_html_' . $term->term_id 
+        : 'clevers_catban_html_' . $term->term_id . '_' . substr( md5( wp_json_encode( $args ) ), 0, 8 );
+
+    $html = get_transient( $cache_key );
     if ( false !== $html ) {
-        echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped — cached HTML
-        return;
+        return $html;
     }
 
-    $html = clevers_catban_build_html( $term, $banner_id );
+    $html = clevers_catban_build_html( $term, $banner_id, $args );
     set_transient( $cache_key, $html, MONTH_IN_SECONDS );
-    echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+    return $html;
 }
 
 /**
  * Construye el HTML del banner con imagen responsive (srcset + sizes).
  */
-function clevers_catban_build_html( $term, $banner_id ) {
+function clevers_catban_build_html( $term, $banner_id, $args = array() ) {
+    $defaults = array(
+        'show_title' => 'yes',
+        'show_desc'  => 'yes',
+        'full_width' => 'yes',
+    );
+    $args = wp_parse_args( $args, $defaults );
+
     $name        = esc_html( $term->name );
     $description = wp_kses_post( term_description( $term ) );
 
@@ -185,40 +237,93 @@ function clevers_catban_build_html( $term, $banner_id ) {
         'full',
         false,
         array(
-            'class'      => 'clevers-catban__img',
-            'alt'        => esc_attr( $term->name ),
-            'loading'    => 'lazy',
-            'decoding'   => 'async',
+            'class'         => 'clevers-catban__img',
+            'alt'           => esc_attr( $term->name ),
+            'loading'       => 'lazy',
+            'decoding'      => 'async',
             'fetchpriority' => 'high',
         )
     );
     if ( ! $img ) return '';
 
+    $figure_classes = array( 'clevers-catban' );
+    if ( 'no' === $args['full_width'] || 'false' === $args['full_width'] ) {
+        $figure_classes[] = 'clevers-catban--contained';
+    }
+
+    $show_title = ( 'yes' === $args['show_title'] || 'true' === $args['show_title'] || true === $args['show_title'] );
+    $show_desc  = ( 'yes' === $args['show_desc'] || 'true' === $args['show_desc'] || true === $args['show_desc'] );
+
     ob_start();
     ?>
-    <figure class="clevers-catban" role="img" aria-label="<?php echo esc_attr( $term->name ); ?>">
+    <figure class="<?php echo esc_attr( implode( ' ', $figure_classes ) ); ?>" role="img" aria-label="<?php echo esc_attr( $term->name ); ?>">
         <?php echo $img; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped — wp_get_attachment_image ya escapa ?>
-        <figcaption class="clevers-catban__overlay">
-            <h1 class="clevers-catban__title"><?php echo $name; ?></h1>
-            <?php if ( $description ) : ?>
-                <div class="clevers-catban__desc"><?php echo $description; // phpcs:ignore — ya saneado ?></div>
-            <?php endif; ?>
-        </figcaption>
+        <?php if ( $show_title || ( $show_desc && $description ) ) : ?>
+            <figcaption class="clevers-catban__overlay">
+                <?php if ( $show_title ) : ?>
+                    <h1 class="clevers-catban__title"><?php echo $name; ?></h1>
+                <?php endif; ?>
+                <?php if ( $show_desc && $description ) : ?>
+                    <div class="clevers-catban__desc"><?php echo $description; // phpcs:ignore — ya saneado con wp_kses_post ?></div>
+                <?php endif; ?>
+            </figcaption>
+        <?php endif; ?>
     </figure>
     <?php
     return ob_get_clean();
 }
 
 /* ============================================================
+ * Shortcode: [clevers_category_banner]
+ * ============================================================ */
+
+add_shortcode( 'clevers_category_banner', 'clevers_catban_shortcode' );
+function clevers_catban_shortcode( $atts ) {
+    $atts = shortcode_atts( array(
+        'id'         => 0,
+        'slug'       => '',
+        'show_title' => 'yes',
+        'show_desc'  => 'yes',
+        'full_width' => 'yes',
+    ), $atts, 'clevers_category_banner' );
+
+    $term = null;
+    if ( ! empty( $atts['id'] ) ) {
+        $term = get_term( absint( $atts['id'] ), 'product_cat' );
+    } elseif ( ! empty( $atts['slug'] ) ) {
+        $term = get_term_by( 'slug', sanitize_title( $atts['slug'] ), 'product_cat' );
+    } elseif ( is_product_category() ) {
+        $term = get_queried_object();
+    }
+
+    if ( ! $term || is_wp_error( $term ) || empty( $term->term_id ) ) {
+        return '';
+    }
+
+    $banner_id = absint( get_term_meta( $term->term_id, CLEVERS_CATBAN_META, true ) );
+    if ( ! $banner_id ) {
+        return '';
+    }
+
+    clevers_catban_enqueue_styles();
+
+    return clevers_catban_get_html( $term, $banner_id, $atts );
+}
+
+/* ============================================================
  * Flush de caché al editar el attachment o el término
  * ============================================================ */
+
+function clevers_catban_flush_term_cache( $term_id ) {
+    delete_transient( 'clevers_catban_html_' . $term_id );
+}
 
 add_action( 'edited_term', 'clevers_catban_flush_on_term_edit', 10, 2 );
 function clevers_catban_flush_on_term_edit( $term_id, $tt_id ) {
     if ( ! function_exists( 'get_term' ) ) return;
     $term = get_term( $term_id );
     if ( $term && $term->taxonomy === 'product_cat' ) {
-        delete_transient( 'clevers_catban_html_' . $term_id );
+        clevers_catban_flush_term_cache( $term_id );
     }
 }
 
@@ -227,7 +332,7 @@ function clevers_catban_flush_all( $post_id ) {
     $terms = get_terms( array( 'taxonomy' => 'product_cat', 'hide_empty' => false, 'meta_key' => CLEVERS_CATBAN_META, 'meta_value' => (string) $post_id, 'fields' => 'ids' ) );
     if ( is_array( $terms ) ) {
         foreach ( $terms as $tid ) {
-            delete_transient( 'clevers_catban_html_' . $tid );
+            clevers_catban_flush_term_cache( $tid );
         }
     }
 }
