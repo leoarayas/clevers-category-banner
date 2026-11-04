@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Clevers Category Banner
  * Description: Banner full-width exclusivo por categoría de WooCommerce sobre el listado de productos. Optimizado en rendimiento, seguridad y responsivo.
- * Version: 1.3.0
+ * Version: 1.3.1
  * Author: Clevers
  * Text Domain: clevers-category-banner
  * License: GPLv2 or later
@@ -10,7 +10,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-define( 'CLEVERS_CATBAN_VERSION', '1.3.0' );
+define( 'CLEVERS_CATBAN_VERSION', '1.3.1' );
 define( 'CLEVERS_CATBAN_PATH', plugin_dir_path( __FILE__ ) );
 define( 'CLEVERS_CATBAN_URL', plugin_dir_url( __FILE__ ) );
 define( 'CLEVERS_CATBAN_META', '_clevers_category_banner' );
@@ -327,12 +327,13 @@ function clevers_catban_flush_on_term_edit( $term_id, $tt_id ) {
     }
 }
 
-add_action( 'wp_update_attachment_metadata', 'clevers_catban_flush_all', 10, 1 );
-function clevers_catban_flush_all( $post_id ) {
+add_filter( 'wp_update_attachment_metadata', 'clevers_catban_flush_all', 10, 2 );
+function clevers_catban_flush_all( $data, $post_id ) {
     $terms = get_terms( array( 'taxonomy' => 'product_cat', 'hide_empty' => false, 'meta_key' => CLEVERS_CATBAN_META, 'meta_value' => (string) $post_id, 'fields' => 'ids' ) );
     if ( is_array( $terms ) ) {
         foreach ( $terms as $tid ) {
             clevers_catban_flush_term_cache( $tid );
         }
     }
+    return $data;
 }

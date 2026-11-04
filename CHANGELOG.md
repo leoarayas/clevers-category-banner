@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1] - 2026-11-04
+
+### Fixed
+- Changed `wp_update_attachment_metadata` hook to `add_filter` returning `$data` to prevent WordPress from deleting attachment metadata (`_wp_attachment_metadata`).
+
 ## [1.3.0] - 2026-10-30
 
 ### Added
